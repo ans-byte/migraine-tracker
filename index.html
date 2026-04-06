@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migraine Tracker</title>
+
+  <!-- CDN: Bootstrap 5 + Icons + Chart.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+  <style>
+    /* ── CSS Variables ───────────────────────────────────────────── */
+    :root {
+      --bg: #f8f9fa; --bg-card: #ffffff; --bg-card-header: #f1f3f5;
+      --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+      --navbar-bg: #4f46e5; --primary: #4f46e5; --primary-hover: #4338ca;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08); --shadow-hover: 0 4px 16px rgba(0,0,0,0.14);
+      --transition: all 0.2s ease;
+    }
+    body.dark-mode {
+      --bg: #0f172a; --bg-card: #1e293b; --bg-card-header: #1e293b;
+      --border: #334155; --text: #f1f5f9; --text-muted: #94a3b8;
+      --navbar-bg: #1e1b4b; --shadow: 0 2px 8px rgba(0,0,0,0.4);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.5);
+    }
+    body { background-color: var(--bg); color: var(--text);
+           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+           transition: background-color 0.3s, color 0.3s; min-height: 100vh; }
+
+    /* ── Navbar ──────────────────────────────────────────────────── */
+    .navbar-custom { background-color: var(--navbar-bg); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .navbar-custom .navbar-brand { color:#fff; font-weight:700; font-size:1.25rem; }
+    .navbar-custom .navbar-brand:hover { color:#c7d2fe; }
+    .navbar-custom .nav-link { color:rgba(255,255,255,0.85); font-weight:500; border-radius:6px;
+                                padding:0.4rem 0.8rem; transition:var(--transition); }
+    .navbar-custom .nav-link:hover { color:#fff; background:rgba(255,255,255,0.12); }
+    .navbar-custom .nav-link.active { color:#fff; background:rgba(255,255,255,0.2); }
+    .navbar-custom .navbar-toggler { border-color:rgba(255,255,255,0.4); }
+    .navbar-custom .navbar-toggler-icon {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255,255,255,0.9)' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+
+    /* ── Cards ───────────────────────────────────────────────────── */
+    .card { background-color:var(--bg-card); border:1px solid var(--border); border-radius:12px;
+            box-shadow:var(--shadow); transition:var(--transition); overflow:hidden; }
+    .card:hover { box-shadow:var(--shadow-hover); }
+    .card-header { background-color:var(--bg-card-header); border-bottom:1px solid var(--border);
+                   font-weight:600; padding:0.85rem 1.25rem; color:var(--text); }
+    .card-body { padding:1.25rem; color:var(--text); }
+    .list-group-item { background-color:var(--bg-card); border-color:var(--border); color:var(--text); }
+    .list-group-item:hover { background-color:var(--bg-card-header); }
+
+    /* ── Page header ─────────────────────────────────────────────── */
+    .page-header { border-bottom:2px solid var(--primary); padding-bottom:.75rem; }
+    .page-title { font-size:1.75rem; font-weight:700; color:var(--text); margin-bottom:.25rem; }
+
+    /* ── Stat cards ──────────────────────────────────────────────── */
+    .stat-card { border-radius:12px; padding:1.25rem; text-align:center;
+                 box-shadow:var(--shadow); transition:var(--transition); position:relative; overflow:hidden; }
+    .stat-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-hover); }
+    .stat-icon { font-size:1.75rem; margin-bottom:.5rem; opacity:.8; }
+    .stat-value { font-size:2rem; font-weight:800; line-height:1; margin-bottom:.35rem; }
+    .stat-label { font-size:.78rem; font-weight:500; opacity:.8; text-transform:uppercase; letter-spacing:.04em; }
+    .stat-card-primary { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; }
+    .stat-card-warning  { background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; }
+    .stat-card-success  { background:linear-gradient(135deg,#10b981,#059669); color:#fff; }
+    .stat-card-info     { background:linear-gradient(135deg,#0891b2,#0284c7); color:#fff; }
+
+    /* ── Severity badges ─────────────────────────────────────────── */
+    .badge.severity-1,.badge.severity-2,.badge.severity-3 { background-color:#10b981!important; color:#fff; }
+    .badge.severity-4,.badge.severity-5,.badge.severity-6 { background-color:#f59e0b!important; color:#fff; }
+    .badge.severity-7,.badge.severity-8                   { background-color:#f97316!important; color:#fff; }
+    .badge.severity-9,.badge.severity-10                  { background-color:#ef4444!important; color:#fff; }
+    .severity-badge { font-size:.9rem; padding:.25em .55em; min-width:2em; text-align:center; }
+
+    /* ── Trigger checks ──────────────────────────────────────────── */
+    .trigger-check { background:var(--bg-card-header); border:1px solid var(--border);
+                     border-radius:8px; padding:.5rem .75rem; transition:var(--transition); }
+    .trigger-check:hover { background:rgba(79,70,229,0.08); border-color:var(--primary); }
+    .trigger-check .form-check-input:checked { background-color:var(--primary); border-color:var(--primary); }
+
+    /* ── Charts ──────────────────────────────────────────────────── */
+    .chart-container { position:relative; height:260px; width:100%; }
+
+    /* ── Mini calendar ───────────────────────────────────────────── */
+    .mini-calendar { font-size:.8rem; }
+    .cal-header { display:grid; grid-template-columns:repeat(7,1fr); text-align:center;
+                  font-weight:700; color:var(--text-muted); padding:.25rem 0; }
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+    .cal-cell { aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+                border-radius:6px; font-size:.75rem; cursor:default; transition:var(--transition); }
+    .cal-cell.empty { background:transparent; }
+    .cal-cell.today { border:2px solid var(--primary); font-weight:700; }
+    .cal-cell.migraine-1,.cal-cell.migraine-2,.cal-cell.migraine-3 { background:#bbf7d0; color:#065f46; }
+    .cal-cell.migraine-4,.cal-cell.migraine-5,.cal-cell.migraine-6 { background:#fde68a; color:#78350f; }
+    .cal-cell.migraine-7,.cal-cell.migraine-8  { background:#fed7aa; color:#7c2d12; }
+    .cal-cell.migraine-9,.cal-cell.migraine-10 { background:#fecaca; color:#7f1d1d; }
+    body.dark-mode .cal-cell.migraine-1, body.dark-mode .cal-cell.migraine-2,
+    body.dark-mode .cal-cell.migraine-3 { background:#065f46; color:#bbf7d0; }
+    body.dark-mode .cal-cell.migraine-4, body.dark-mode .cal-cell.migraine-5,
+    body.dark-mode .cal-cell.migraine-6 { background:#78350f; color:#fde68a; }
+    body.dark-mode .cal-cell.migraine-7, body.dark-mode .cal-cell.migraine-8 { background:#7c2d12; color:#fed7aa; }
+    body.dark-mode .cal-cell.migraine-9, body.dark-mode .cal-cell.migraine-10 { background:#7f1d1d; color:#fecaca; }
+
+    /* ── Forms ───────────────────────────────────────────────────── */
+    .form-control,.form-select { background-color:var(--bg-card); border-color:var(--border); color:var(--text); }
+    .form-control:focus,.form-select:focus { background-color:var(--bg-card); border-color:var(--primary);
+                                             color:var(--text); box-shadow:0 0 0 .2rem rgba(79,70,229,0.2); }
+    .form-control::placeholder { color:var(--text-muted); }
+
+    /* ── Tabs ────────────────────────────────────────────────────── */
+    .nav-tabs { border-bottom:2px solid var(--border); }
+    .nav-tabs .nav-link { color:var(--text-muted); border:none; border-bottom:2px solid transparent;
+                          padding:.6rem 1rem; font-weight:500; margin-bottom:-2px; transition:var(--transition); }
+    .nav-tabs .nav-link:hover { color:var(--primary); background:transparent; }
+    .nav-tabs .nav-link.active { color:var(--primary); border-bottom-color:var(--primary);
+                                 background:transparent; font-weight:600; }
+
+    /* ── Activity icons ──────────────────────────────────────────── */
+    .activity-icon { width:36px; height:36px; border-radius:50%; display:flex;
+                     align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+    .activity-migraine { background:#fee2e2; color:#dc2626; }
+    .activity-sleep    { background:#dbeafe; color:#2563eb; }
+    .activity-water    { background:#e0f2fe; color:#0284c7; }
+    .activity-stress   { background:#fef9c3; color:#d97706; }
+    body.dark-mode .activity-migraine { background:#7f1d1d; color:#fca5a5; }
+    body.dark-mode .activity-sleep    { background:#1e3a5f; color:#93c5fd; }
+    body.dark-mode .activity-water    { background:#164e63; color:#7dd3fc; }
+    body.dark-mode .activity-stress   { background:#78350f; color:#fde68a; }
+
+    /* ── Buttons ─────────────────────────────────────────────────── */
+    .btn-primary { background-color:var(--primary); border-color:var(--primary); }
+    .btn-primary:hover { background-color:var(--primary-hover); border-color:var(--primary-hover); }
+    .btn-outline-primary { color:var(--primary); border-color:var(--primary); }
+    .btn-outline-primary:hover { background-color:var(--primary); color:#fff; }
+
+    /* ── Tables ──────────────────────────────────────────────────── */
+    .table { color:var(--text); }
+    .table th { color:var(--text-muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; }
+    .table-hover tbody tr:hover { background-color:var(--bg-card-header); }
+
+    /* ── Section visibility ──────────────────────────────────────── */
+    .page-section { display:none; }
+    .page-section.active { display:block; }
+
+    /* ── Responsive ──────────────────────────────────────────────── */
+    @media (max-width: 576px) {
+      .page-title { font-size:1.35rem; }
+      .stat-value { font-size:1.5rem; }
+      .chart-container { height:200px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ──────────────────────────────────────────────────────────── -->
+<nav class="navbar navbar-expand-lg navbar-custom">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand" href="#" onclick="showPage('dashboard')">
+      <i class="bi bi-activity me-2"></i>Migraine Tracker
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" id="nav-dashboard" href="#" onclick="showPage('dashboard')">
+            <i class="bi bi-house me-1"></i>Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="nav-log-migraine" href="#" onclick="showPage('log-migraine')">
+            <i class="bi bi-plus-circle me-1"></i>Log Migraine
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="nav-log-health" href="#" onclick="showPage('log-health')">
+            <i class="bi bi-heart-pulse me-1"></i>Health Log
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="nav-statistics" href="#" onclick="showPage('statistics')">
+            <i class="bi bi-bar-chart-line me-1"></i>Statistics
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="nav-reports" href="#" onclick="showPage('reports')">
+            <i class="bi bi-file-earmark-text me-1"></i>Reports
+          </a>
+        </li>
+      </ul>
+      <button class="btn btn-outline-secondary btn-sm" id="themeToggle" title="Toggle dark/light mode">
+        <i class="bi bi-moon-fill" id="themeIcon"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-4 py-3">
+
+  <!-- ══════════════════════════════════════════════════════════════
+       DASHBOARD
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="section-dashboard" class="page-section active">
+    <div class="page-header mb-4">
+      <h1 class="page-title"><i class="bi bi-house me-2"></i>Dashboard</h1>
+      <p class="text-muted mb-0" id="dashToday"></p>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="stat-card stat-card-primary">
+          <div class="stat-icon"><i class="bi bi-activity"></i></div>
+          <div class="stat-value" id="dashTotal">–</div>
+          <div class="stat-label">Migraines This Month</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card stat-card-warning">
+          <div class="stat-icon"><i class="bi bi-speedometer2"></i></div>
+          <div class="stat-value" id="dashAvgSev">–</div>
+          <div class="stat-label">Avg Severity</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card stat-card-success">
+          <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+          <div class="stat-value" id="dashDaysSince">–</div>
+          <div class="stat-label">Days Since Last Migraine</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card stat-card-info">
+          <div class="stat-icon"><i class="bi bi-moon-stars"></i></div>
+          <div class="stat-value" id="dashAvgSleep">–</div>
+          <div class="stat-label">Avg Sleep Hours</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-lg-8">
+        <div class="card h-100">
+          <div class="card-header"><i class="bi bi-graph-up me-2"></i>Migraine Severity Trend (Last 30 Days)</div>
+          <div class="card-body">
+            <div class="chart-container"><canvas id="dashboardTrendChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card h-100">
+          <div class="card-header"><i class="bi bi-calendar3 me-2"></i>This Month</div>
+          <div class="card-body p-2">
+            <div id="miniCalendar" class="mini-calendar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-clock-history me-2"></i>Recent Activity</div>
+          <div class="card-body p-0">
+            <ul class="list-group list-group-flush" id="recentActivity">
+              <li class="list-group-item text-muted text-center py-4">No recent activity</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-droplet me-2"></i>Quick Water Log</div>
+          <div class="card-body">
+            <p class="text-muted small">Log today's water intake instantly.</p>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Date</label>
+              <input type="date" class="form-control" id="quickWaterDate" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Cups of Water</label>
+              <input type="number" class="form-control" id="quickWaterCups" min="0" max="30" step="0.5" placeholder="e.g. 8" />
+            </div>
+            <button class="btn btn-primary w-100" onclick="quickLogWater()">
+              <i class="bi bi-droplet-fill me-1"></i>Log Water
+            </button>
+          </div>
+        </div>
+        <div class="card mt-3">
+          <div class="card-header"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</div>
+          <div class="card-body d-grid gap-2">
+            <button class="btn btn-outline-danger btn-sm" onclick="showPage('log-migraine')">
+              <i class="bi bi-plus-circle me-1"></i>Log a Migraine
+            </button>
+            <button class="btn btn-outline-success btn-sm" onclick="showPage('log-health')">
+              <i class="bi bi-heart-pulse me-1"></i>Log Health Data
+            </button>
+            <button class="btn btn-outline-primary btn-sm" onclick="showPage('statistics')">
+              <i class="bi bi-bar-chart-line me-1"></i>View Statistics
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="showPage('reports')">
+              <i class="bi bi-download me-1"></i>Download Reports
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /dashboard -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       LOG MIGRAINE
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="section-log-migraine" class="page-section">
+    <div class="page-header mb-4">
+      <h1 class="page-title"><i class="bi bi-plus-circle me-2"></i>Log a Migraine</h1>
+      <p class="text-muted mb-0">Record your migraine details for tracking and analysis.</p>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-pencil-square me-2"></i>Migraine Details</div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="mDate" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Duration (hours)</label>
+                <input type="number" class="form-control" id="mDuration" min="0" max="168" step="0.5" placeholder="e.g. 4" />
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">
+                  Severity (1–10)
+                  <span class="badge severity-badge severity-5 ms-2" id="severityBadge">5</span>
+                </label>
+                <input type="range" class="form-range severity-slider" id="mSeverity" min="1" max="10" value="5"
+                       oninput="updateSeverityBadge(this.value)" />
+                <div class="d-flex justify-content-between text-muted small">
+                  <span>1 – Mild</span><span>5 – Moderate</span><span>10 – Severe</span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Location</label>
+                <select class="form-select" id="mLocation">
+                  <option value="">– Select –</option>
+                  <option>Left temple</option><option>Right temple</option>
+                  <option>Behind eyes</option><option>Forehead</option>
+                  <option>Neck / base of skull</option><option>Whole head</option><option>Other</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Medication Taken</label>
+                <input type="text" class="form-control" id="mMedication" placeholder="e.g. Sumatriptan 50mg" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Triggers -->
+        <div class="card mt-3">
+          <div class="card-header"><i class="bi bi-fire me-2"></i>Triggers</div>
+          <div class="card-body">
+            <div class="row g-2">
+              <div class="col-6 col-md-4" id="triggersContainer"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Symptoms -->
+        <div class="card mt-3">
+          <div class="card-header"><i class="bi bi-exclamation-triangle me-2"></i>Symptoms</div>
+          <div class="card-body">
+            <div class="row g-2" id="symptomsContainer"></div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="card mt-3">
+          <div class="card-header"><i class="bi bi-journal-text me-2"></i>Notes</div>
+          <div class="card-body">
+            <textarea class="form-control" id="mNotes" rows="3" placeholder="Any additional notes…"></textarea>
+          </div>
+        </div>
+
+        <div class="mt-3 d-flex gap-2">
+          <button class="btn btn-primary" onclick="saveMigraine()">
+            <i class="bi bi-save me-1"></i>Save Entry
+          </button>
+          <button class="btn btn-outline-secondary" onclick="resetMigraineForm()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+          </button>
+        </div>
+      </div><!-- /col-lg-8 -->
+
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-clock-history me-2"></i>Recent Entries</div>
+          <div class="card-body p-0">
+            <ul class="list-group list-group-flush" id="recentMigraines">
+              <li class="list-group-item text-muted text-center py-3">No entries yet</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /log-migraine -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       LOG HEALTH
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="section-log-health" class="page-section">
+    <div class="page-header mb-4">
+      <h1 class="page-title"><i class="bi bi-heart-pulse me-2"></i>Health Log</h1>
+      <p class="text-muted mb-0">Track your sleep, food, water, caffeine, stress and cycle data.</p>
+    </div>
+
+    <ul class="nav nav-tabs mb-4" id="healthTabs">
+      <li class="nav-item"><a class="nav-link active" href="#" onclick="switchHealthTab('sleep',this)"><i class="bi bi-moon-stars me-1"></i>Sleep</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="switchHealthTab('food',this)"><i class="bi bi-egg-fried me-1"></i>Food</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="switchHealthTab('water',this)"><i class="bi bi-droplet me-1"></i>Water</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="switchHealthTab('caffeine',this)"><i class="bi bi-cup-hot me-1"></i>Caffeine</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="switchHealthTab('stress',this)"><i class="bi bi-lightning me-1"></i>Stress</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" onclick="switchHealthTab('menstrual',this)"><i class="bi bi-heart me-1"></i>Cycle</a></li>
+    </ul>
+
+    <!-- Sleep -->
+    <div id="htab-sleep" class="health-tab">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-moon-stars me-2"></i>Log Sleep</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Date</label>
+              <input type="date" class="form-control" id="sleepDate" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Hours Slept <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="sleepHours" min="0" max="24" step="0.5" placeholder="e.g. 7.5" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Quality (1–5)</label>
+              <select class="form-select" id="sleepQuality">
+                <option value="">– Select –</option>
+                <option value="1">1 – Very poor</option><option value="2">2 – Poor</option>
+                <option value="3">3 – Fair</option><option value="4">4 – Good</option>
+                <option value="5">5 – Excellent</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Wake Time</label>
+              <input type="time" class="form-control" id="sleepWake" />
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Notes</label>
+              <input type="text" class="form-control" id="sleepNotes" placeholder="Optional notes…" />
+            </div>
+          </div>
+          <button class="btn btn-primary mt-3" onclick="saveSleep()"><i class="bi bi-save me-1"></i>Save Sleep</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Food -->
+    <div id="htab-food" class="health-tab" style="display:none">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-egg-fried me-2"></i>Log Food</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Date</label>
+              <input type="date" class="form-control" id="foodDate" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Meal Type</label>
+              <select class="form-select" id="foodMeal">
+                <option value="breakfast">Breakfast</option><option value="lunch">Lunch</option>
+                <option value="dinner">Dinner</option><option value="snack">Snack</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Food Items</label>
+              <input type="text" class="form-control" id="foodItems" placeholder="e.g. Pasta, salad" />
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Ingredients / Details</label>
+              <input type="text" class="form-control" id="foodIngredients" placeholder="e.g. tomato, cheese" />
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Notes</label>
+              <input type="text" class="form-control" id="foodNotes" placeholder="Optional notes…" />
+            </div>
+          </div>
+          <button class="btn btn-primary mt-3" onclick="saveFood()"><i class="bi bi-save me-1"></i>Save Food</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Water -->
+    <div id="htab-water" class="health-tab" style="display:none">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-droplet me-2"></i>Log Water Intake</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date</label>
+              <input type="date" class="form-control" id="waterDate" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Cups of Water <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="waterCups" min="0" max="30" step="0.5" placeholder="e.g. 8" />
+            </div>
+          </div>
+          <button class="btn btn-primary mt-3" onclick="saveWater()"><i class="bi bi-save me-1"></i>Save Water</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Caffeine -->
+    <div id="htab-caffeine" class="health-tab" style="display:none">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-cup-hot me-2"></i>Log Caffeine</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Date</label>
+              <input type="date" class="form-control" id="cafDate" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Cups <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="cafCups" min="0" max="20" step="0.5" placeholder="e.g. 2" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Drink Type</label>
+              <select class="form-select" id="cafType">
+                <option value="">– Select –</option>
+                <option>Coffee</option><option>Tea</option><option>Energy drink</option>
+                <option>Soda</option><option>Other</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary mt-3" onclick="saveCaffeine()"><i class="bi bi-save me-1"></i>Save Caffeine</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stress -->
+    <div id="htab-stress" class="health-tab" style="display:none">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-lightning me-2"></i>Log Stress Level</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date</label>
+              <input type="date" class="form-control" id="stressDate" />
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">
+                Stress Level (1–10)
+                <span class="badge severity-badge severity-5 ms-2" id="stressBadge">5</span>
+              </label>
+              <input type="range" class="form-range" id="stressLevel" min="1" max="10" value="5"
+                     oninput="updateStressBadge(this.value)" />
+              <div class="d-flex justify-content-between text-muted small">
+                <span>1 – Calm</span><span>5 – Moderate</span><span>10 – Extreme</span>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Notes</label>
+              <input type="text" class="form-control" id="stressNotes" placeholder="What caused the stress?" />
+            </div>
+          </div>
+          <button class="btn btn-primary mt-3" onclick="saveStress()"><i class="bi bi-save me-1"></i>Save Stress</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menstrual -->
+    <div id="htab-menstrual" class="health-tab" style="display:none">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-heart me-2"></i>Log Menstrual Cycle</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date</label>
+              <input type="date" class="form-control" id="menstrualDate" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Flow Level</label>
+              <select class="form-select" id="menstrualFlow">
+                <option value="">– Select –</option>
+                <option value="spotting">Spotting</option><option value="light">Light</option>
+                <option value="medium">Medium</option><option value="heavy">Heavy</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Notes</label>
+              <input type="text" class="form-control" id="menstrualNotes" placeholder="Optional notes…" />
+            </div>
+          </div>
+          <button class="btn btn-primary mt-3" onclick="saveMenstrual()"><i class="bi bi-save me-1"></i>Save Cycle</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /log-health -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       STATISTICS
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="section-statistics" class="page-section">
+    <div class="page-header mb-4">
+      <h1 class="page-title"><i class="bi bi-bar-chart-line me-2"></i>Statistics &amp; Analytics</h1>
+      <p class="text-muted mb-0">Visual insights into your migraine patterns and health data.</p>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="stat-card stat-card-primary">
+          <div class="stat-icon"><i class="bi bi-activity"></i></div>
+          <div class="stat-value" id="sTotalMigraines">–</div>
+          <div class="stat-label">Total Migraines Logged</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card stat-card-warning">
+          <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
+          <div class="stat-value" id="sAvgDuration">–</div>
+          <div class="stat-label">Avg Duration (hrs)</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card stat-card-info">
+          <div class="stat-icon"><i class="bi bi-geo-alt"></i></div>
+          <div class="stat-value" id="sTopLocation">–</div>
+          <div class="stat-label">Most Common Location</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card stat-card-success">
+          <div class="stat-icon"><i class="bi bi-fire"></i></div>
+          <div class="stat-value" id="sTopTrigger">–</div>
+          <div class="stat-label">Top Trigger</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-bar-chart me-2"></i>Migraine Frequency Per Week (Last 12 Weeks)</div>
+          <div class="card-body"><div class="chart-container"><canvas id="weeklyFreqChart"></canvas></div></div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-graph-up me-2"></i>Severity Trend (Last 30 Days)</div>
+          <div class="card-body"><div class="chart-container"><canvas id="severityTrendChart"></canvas></div></div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-moon-stars me-2"></i>Sleep Hours vs Migraine Days (Last 30 Days)</div>
+          <div class="card-body"><div class="chart-container"><canvas id="sleepMigraineChart"></canvas></div></div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-fire me-2"></i>Top Triggers</div>
+          <div class="card-body"><div class="chart-container"><canvas id="triggersChart"></canvas></div></div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-lightning me-2"></i>Stress Level Over Time (Last 30 Days)</div>
+          <div class="card-body"><div class="chart-container"><canvas id="stressChart"></canvas></div></div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-droplet me-2"></i>Water Intake Over Time (Last 30 Days)</div>
+          <div class="card-body"><div class="chart-container"><canvas id="waterChart"></canvas></div></div>
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-table me-2"></i>Location &amp; Duration Breakdown</div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead><tr><th>Location</th><th>Count</th><th>% of Total</th></tr></thead>
+                <tbody id="locationTableBody"><tr><td colspan="3" class="text-muted text-center">No data</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /statistics -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       REPORTS
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="section-reports" class="page-section">
+    <div class="page-header mb-4">
+      <h1 class="page-title"><i class="bi bi-file-earmark-text me-2"></i>Reports</h1>
+      <p class="text-muted mb-0">Download your migraine and health data as CSV reports.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header"><i class="bi bi-calendar-week me-2"></i>Weekly Report</div>
+          <div class="card-body">
+            <p class="text-muted">Generate a report for a specific week.</p>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Week Starting (Monday)</label>
+              <input type="date" class="form-control" id="weekStart" />
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-outline-primary" onclick="downloadWeeklyCSV()">
+                <i class="bi bi-filetype-csv me-2"></i>Download Weekly CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header"><i class="bi bi-calendar-month me-2"></i>Monthly Report</div>
+          <div class="card-body">
+            <p class="text-muted">Generate a complete report for an entire month.</p>
+            <div class="row g-2 mb-3">
+              <div class="col-7">
+                <label class="form-label fw-semibold">Month</label>
+                <select class="form-select" id="reportMonth">
+                  <option value="1">January</option><option value="2">February</option>
+                  <option value="3">March</option><option value="4">April</option>
+                  <option value="5">May</option><option value="6">June</option>
+                  <option value="7">July</option><option value="8">August</option>
+                  <option value="9">September</option><option value="10">October</option>
+                  <option value="11">November</option><option value="12">December</option>
+                </select>
+              </div>
+              <div class="col-5">
+                <label class="form-label fw-semibold">Year</label>
+                <input type="number" class="form-control" id="reportYear" min="2020" max="2030" />
+              </div>
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-outline-primary" onclick="downloadMonthlyCSV()">
+                <i class="bi bi-filetype-csv me-2"></i>Download Monthly CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-info-circle me-2"></i>What's Included in Reports</div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <div class="d-flex align-items-start gap-2">
+                  <i class="bi bi-activity text-danger fs-5 mt-1"></i>
+                  <div><div class="fw-semibold">Migraine Summary</div>
+                    <div class="text-muted small">Total count, avg severity, duration, and full log.</div></div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="d-flex align-items-start gap-2">
+                  <i class="bi bi-moon-stars text-primary fs-5 mt-1"></i>
+                  <div><div class="fw-semibold">Sleep Statistics</div>
+                    <div class="text-muted small">Average hours slept and nightly log entries.</div></div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="d-flex align-items-start gap-2">
+                  <i class="bi bi-droplet text-info fs-5 mt-1"></i>
+                  <div><div class="fw-semibold">Water Intake</div>
+                    <div class="text-muted small">Total cups consumed and daily breakdown.</div></div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="d-flex align-items-start gap-2">
+                  <i class="bi bi-lightning text-warning fs-5 mt-1"></i>
+                  <div><div class="fw-semibold">Stress Levels</div>
+                    <div class="text-muted small">Average stress level and daily log entries.</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header"><i class="bi bi-trash me-2"></i>Manage Data</div>
+          <div class="card-body">
+            <p class="text-muted">All data is stored locally in your browser. You can export it as CSV above, or clear it here.</p>
+            <button class="btn btn-outline-danger btn-sm" onclick="clearAllData()">
+              <i class="bi bi-trash me-1"></i>Clear All Data
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /reports -->
+
+</div><!-- /container -->
+
+<!-- Toast container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   STORAGE HELPERS
+══════════════════════════════════════════════════════════════════ */
+const KEYS = {
+  migraines: "mt_migraines",
+  sleep:     "mt_sleep",
+  food:      "mt_food",
+  water:     "mt_water",
+  caffeine:  "mt_caffeine",
+  stress:    "mt_stress",
+  menstrual: "mt_menstrual",
+};
+
+function load(key) {
+  try { return JSON.parse(localStorage.getItem(KEYS[key]) || "[]"); }
+  catch { return []; }
+}
+
+function save(key, arr) {
+  localStorage.setItem(KEYS[key], JSON.stringify(arr));
+}
+
+function addEntry(key, entry) {
+  const arr = load(key);
+  entry.id = Date.now();
+  arr.push(entry);
+  save(key, arr);
+}
+
+function deleteEntry(key, id) {
+  const arr = load(key).filter(e => e.id !== id);
+  save(key, arr);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   DATE HELPERS
+══════════════════════════════════════════════════════════════════ */
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function dateRange(startISO, endISO) {
+  const arr = [];
+  const d = new Date(startISO + "T00:00:00");
+  const end = new Date(endISO + "T00:00:00");
+  while (d <= end) {
+    arr.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+  return arr;
+}
+
+function daysAgoISO(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
+function isoWeekKey(isoDate) {
+  const d = new Date(isoDate + "T00:00:00");
+  const jan4 = new Date(d.getFullYear(), 0, 4);
+  const diff = d - jan4;
+  const week = Math.ceil((diff / 86400000 + jan4.getDay() + 1) / 7);
+  return `${d.getFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════════════════════════ */
+const PAGES = ["dashboard", "log-migraine", "log-health", "statistics", "reports"];
+let statisticsChartsInitialized = false;
+const chartInstances = {};
+
+function showPage(page) {
+  PAGES.forEach(p => {
+    document.getElementById("section-" + p).classList.toggle("active", p === page);
+    const navEl = document.getElementById("nav-" + p);
+    if (navEl) navEl.classList.toggle("active", p === page);
+  });
+
+  if (page === "dashboard")    initDashboard();
+  if (page === "log-migraine") initLogMigraine();
+  if (page === "statistics")   initStatistics();
+  if (page === "reports")      initReports();
+
+  // Close navbar on mobile
+  const menu = document.getElementById("navMenu");
+  if (menu.classList.contains("show")) {
+    bootstrap.Collapse.getInstance(menu)?.hide();
+  }
+
+  return false;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════════════════════ */
+function showToast(msg, type = "success") {
+  const container = document.getElementById("toastContainer");
+  const id = "toast-" + Date.now();
+  const icons = { success:"bi-check-circle-fill", danger:"bi-x-circle-fill",
+                  warning:"bi-exclamation-triangle-fill", info:"bi-info-circle-fill" };
+  const colors = { success:"text-bg-success", danger:"text-bg-danger",
+                   warning:"text-bg-warning", info:"text-bg-info" };
+  container.insertAdjacentHTML("beforeend", `
+    <div id="${id}" class="toast align-items-center ${colors[type]||"text-bg-secondary"} border-0 show" role="alert" style="min-width:280px">
+      <div class="d-flex">
+        <div class="toast-body fw-semibold">
+          <i class="bi ${icons[type]||"bi-info-circle"} me-2"></i>${msg}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>`);
+  setTimeout(() => document.getElementById(id)?.remove(), 4000);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   THEME
+══════════════════════════════════════════════════════════════════ */
+(function () {
+  if (localStorage.getItem("theme") === "dark") document.body.classList.add("dark-mode");
+})();
+
+document.getElementById("themeToggle").addEventListener("click", () => {
+  const dark = document.body.classList.toggle("dark-mode");
+  document.getElementById("themeIcon").className = dark ? "bi bi-sun-fill" : "bi bi-moon-fill";
+  localStorage.setItem("theme", dark ? "dark" : "light");
+  // Rebuild charts on theme change
+  if (document.getElementById("section-statistics").classList.contains("active")) {
+    Object.values(chartInstances).forEach(c => c && c.destroy());
+    Object.keys(chartInstances).forEach(k => delete chartInstances[k]);
+    buildStatisticsCharts();
+  }
+  if (document.getElementById("section-dashboard").classList.contains("active")) {
+    if (chartInstances.dashTrend) { chartInstances.dashTrend.destroy(); delete chartInstances.dashTrend; }
+    buildDashboardChart();
+  }
+});
+
+/* ══════════════════════════════════════════════════════════════════
+   CHART HELPERS
+══════════════════════════════════════════════════════════════════ */
+function chartColors() {
+  const dark = document.body.classList.contains("dark-mode");
+  return {
+    grid: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)",
+    text: dark ? "#94a3b8" : "#6c757d",
+    primary: "#4f46e5", warning: "#f59e0b",
+    success: "#10b981", info: "#0891b2", danger: "#ef4444",
+  };
+}
+
+function baseOptions(yLabel, xLabel) {
+  const c = chartColors();
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: c.text, boxWidth: 12, padding: 12 } },
+               tooltip: { mode: "index", intersect: false } },
+    scales: {
+      x: { ticks: { color: c.text, maxRotation: 45 }, grid: { color: c.grid },
+           title: xLabel ? { display: true, text: xLabel, color: c.text } : undefined },
+      y: { ticks: { color: c.text }, grid: { color: c.grid },
+           title: yLabel ? { display: true, text: yLabel, color: c.text } : undefined },
+    },
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════════════════════════ */
+function initDashboard() {
+  const now = new Date();
+  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  document.getElementById("dashToday").textContent =
+    `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+
+  document.getElementById("quickWaterDate").value = today();
+
+  // Stats
+  const migraines = load("migraines");
+  const thisMonthStart = today().slice(0, 7) + "-01";
+  const monthMigs = migraines.filter(m => m.date >= thisMonthStart);
+  document.getElementById("dashTotal").textContent = monthMigs.length;
+
+  const avgSev = monthMigs.length
+    ? (monthMigs.reduce((s, m) => s + m.severity, 0) / monthMigs.length).toFixed(1)
+    : "–";
+  document.getElementById("dashAvgSev").textContent = avgSev;
+
+  const last = migraines.sort((a, b) => b.date.localeCompare(a.date))[0];
+  if (last) {
+    const diff = Math.floor((new Date() - new Date(last.date + "T00:00:00")) / 86400000);
+    document.getElementById("dashDaysSince").textContent = diff;
+  } else {
+    document.getElementById("dashDaysSince").textContent = "–";
+  }
+
+  const sleepLogs = load("sleep").filter(s => s.date >= thisMonthStart);
+  const avgSleep = sleepLogs.length
+    ? (sleepLogs.reduce((s, l) => s + l.hours, 0) / sleepLogs.length).toFixed(1)
+    : "–";
+  document.getElementById("dashAvgSleep").textContent = avgSleep;
+
+  buildDashboardChart();
+  renderMiniCalendar();
+  renderRecentActivity();
+}
+
+function buildDashboardChart() {
+  const canvas = document.getElementById("dashboardTrendChart");
+  if (!canvas) return;
+  const cutoff = daysAgoISO(30);
+  const migraines = load("migraines").filter(m => m.date >= cutoff).sort((a, b) => a.date.localeCompare(b.date));
+  const c = chartColors();
+
+  if (chartInstances.dashTrend) { chartInstances.dashTrend.destroy(); }
+
+  chartInstances.dashTrend = new Chart(canvas, {
+    type: "line",
+    data: {
+      labels: migraines.map(m => m.date.slice(5)),
+      datasets: [{
+        label: "Severity",
+        data: migraines.map(m => m.severity),
+        borderColor: c.danger,
+        backgroundColor: "rgba(239,68,68,0.12)",
+        borderWidth: 2.5, pointRadius: 4, tension: 0.35, fill: true,
+      }],
+    },
+    options: {
+      ...baseOptions("Severity (1–10)", "Date"),
+      scales: { ...baseOptions().scales, y: { min: 0, max: 10, ticks: { color: c.text }, grid: { color: c.grid } } },
+    },
+  });
+}
+
+function renderMiniCalendar() {
+  const container = document.getElementById("miniCalendar");
+  if (!container) return;
+  const migraines = load("migraines");
+  const migraineByDate = {};
+  migraines.forEach(m => { migraineByDate[m.date] = m.severity; });
+
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth(), todayNum = now.getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const dayNames = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+  let html = `<div class="cal-header">${dayNames.map(d=>`<div>${d}</div>`).join("")}</div>`;
+  html += '<div class="cal-grid">';
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-cell empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const sev = migraineByDate[iso];
+    let cls = "cal-cell" + (d === todayNum ? " today" : "") + (sev ? ` migraine-${sev}` : "");
+    html += `<div class="${cls}" title="${sev ? `Migraine (severity ${sev})` : ""}">${d}</div>`;
+  }
+  html += "</div>";
+  container.innerHTML = html;
+}
+
+function renderRecentActivity() {
+  const container = document.getElementById("recentActivity");
+  if (!container) return;
+  const cutoff = daysAgoISO(30);
+  const items = [];
+
+  load("migraines").filter(m => m.date >= cutoff).forEach(m =>
+    items.push({ type:"migraine", date:m.date, label:`Migraine – Severity ${m.severity}` }));
+  load("sleep").filter(s => s.date >= cutoff).forEach(s =>
+    items.push({ type:"sleep", date:s.date, label:`Sleep – ${s.hours}h` }));
+  load("water").filter(w => w.date >= cutoff).forEach(w =>
+    items.push({ type:"water", date:w.date, label:`Water – ${w.cups} cups` }));
+  load("stress").filter(s => s.date >= cutoff).forEach(s =>
+    items.push({ type:"stress", date:s.date, label:`Stress – Level ${s.level}` }));
+
+  items.sort((a, b) => b.date.localeCompare(a.date));
+
+  if (!items.length) {
+    container.innerHTML = '<li class="list-group-item text-muted text-center py-3">No recent activity</li>';
+    return;
+  }
+
+  const iconMap = {
+    migraine: { icon:"bi-activity", cls:"activity-migraine" },
+    sleep:    { icon:"bi-moon-stars", cls:"activity-sleep" },
+    water:    { icon:"bi-droplet", cls:"activity-water" },
+    stress:   { icon:"bi-lightning", cls:"activity-stress" },
+  };
+
+  container.innerHTML = items.slice(0, 10).map(item => {
+    const cfg = iconMap[item.type] || { icon:"bi-circle", cls:"" };
+    const [y, mo, dy] = item.date.split("-").map(Number);
+    const dateStr = new Date(y, mo-1, dy).toLocaleDateString("en-US", { month:"short", day:"numeric" });
+    return `
+      <li class="list-group-item d-flex align-items-center gap-3 py-2">
+        <div class="activity-icon ${cfg.cls}"><i class="bi ${cfg.icon}"></i></div>
+        <div class="flex-grow-1">
+          <div class="fw-semibold small">${item.label}</div>
+          <div class="text-muted" style="font-size:.75rem">${dateStr}</div>
+        </div>
+      </li>`;
+  }).join("");
+}
+
+function quickLogWater() {
+  const date = document.getElementById("quickWaterDate").value || today();
+  const cups = parseFloat(document.getElementById("quickWaterCups").value);
+  if (!cups || cups <= 0) { showToast("Enter a valid number of cups", "warning"); return; }
+  addEntry("water", { date, cups });
+  showToast("Water intake logged!", "success");
+  document.getElementById("quickWaterCups").value = "";
+  renderRecentActivity();
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   LOG MIGRAINE
+══════════════════════════════════════════════════════════════════ */
+const TRIGGERS_LIST = [
+  "Stress","Alcohol","Caffeine","Dehydration","Hunger","Poor sleep",
+  "Weather change","Bright lights","Noise","Hormones","Exercise","Medication overuse","Strong smells","Screen time"
+];
+const SYMPTOMS_LIST = [
+  "Nausea","Vomiting","Aura","Light sensitivity","Sound sensitivity","Neck stiffness",
+  "Dizziness","Fatigue","Visual disturbance","Tingling","Confusion","Mood changes"
+];
+
+function initLogMigraine() {
+  document.getElementById("mDate").value = today();
+  // Build triggers
+  const tc = document.getElementById("triggersContainer");
+  tc.className = "";
+  tc.innerHTML = TRIGGERS_LIST.map((t, i) => `
+    <div class="col-6 col-md-4">
+      <div class="form-check trigger-check mb-2">
+        <input class="form-check-input" type="checkbox" id="trig${i}" value="${t}" />
+        <label class="form-check-label small" for="trig${i}">${t}</label>
+      </div>
+    </div>`).join("");
+
+  // Build symptoms
+  const sc = document.getElementById("symptomsContainer");
+  sc.innerHTML = SYMPTOMS_LIST.map((s, i) => `
+    <div class="col-6 col-md-4">
+      <div class="form-check trigger-check mb-2">
+        <input class="form-check-input" type="checkbox" id="symp${i}" value="${s}" />
+        <label class="form-check-label small" for="symp${i}">${s}</label>
+      </div>
+    </div>`).join("");
+
+  loadRecentMigraines();
+}
+
+function loadRecentMigraines() {
+  const el = document.getElementById("recentMigraines");
+  const list = load("migraines").sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  if (!list.length) {
+    el.innerHTML = '<li class="list-group-item text-muted text-center py-3">No entries yet</li>';
+    return;
+  }
+  el.innerHTML = list.map(m => {
+    const [y, mo, dy] = m.date.split("-").map(Number);
+    const dateStr = new Date(y, mo-1, dy).toLocaleDateString("en-US", { month:"short", day:"numeric", year:"numeric" });
+    return `
+      <li class="list-group-item py-2">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="fw-semibold small">${dateStr}</div>
+            <div class="text-muted" style="font-size:.75rem">
+              Severity: <span class="badge severity-badge severity-${m.severity}">${m.severity}</span>
+              ${m.location ? ` · ${m.location}` : ""}
+            </div>
+          </div>
+          <button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="deleteMigraine(${m.id})">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </li>`;
+  }).join("");
+}
+
+function saveMigraine() {
+  const date = document.getElementById("mDate").value || today();
+  const severity = parseInt(document.getElementById("mSeverity").value);
+  const location = document.getElementById("mLocation").value;
+  const duration = document.getElementById("mDuration").value;
+  const medication = document.getElementById("mMedication").value;
+  const notes = document.getElementById("mNotes").value;
+
+  const triggers = [...document.querySelectorAll("#triggersContainer .form-check-input:checked")]
+    .map(el => el.value);
+  const symptoms = [...document.querySelectorAll("#symptomsContainer .form-check-input:checked")]
+    .map(el => el.value);
+
+  addEntry("migraines", {
+    date, severity, location: location || null,
+    duration_hours: duration ? parseFloat(duration) : null,
+    triggers: triggers.join(","),
+    symptoms: symptoms.join(","),
+    medication: medication || null,
+    notes: notes || null,
+  });
+
+  showToast("Migraine entry saved!", "success");
+  resetMigraineForm();
+  loadRecentMigraines();
+}
+
+function resetMigraineForm() {
+  document.getElementById("mDate").value = today();
+  document.getElementById("mSeverity").value = 5;
+  updateSeverityBadge(5);
+  document.getElementById("mLocation").value = "";
+  document.getElementById("mDuration").value = "";
+  document.getElementById("mMedication").value = "";
+  document.getElementById("mNotes").value = "";
+  document.querySelectorAll("#triggersContainer .form-check-input, #symptomsContainer .form-check-input")
+    .forEach(el => el.checked = false);
+}
+
+function deleteMigraine(id) {
+  if (!confirm("Delete this migraine entry?")) return;
+  deleteEntry("migraines", id);
+  showToast("Entry deleted", "success");
+  loadRecentMigraines();
+}
+
+function updateSeverityBadge(v) {
+  const b = document.getElementById("severityBadge");
+  if (b) { b.textContent = v; b.className = `badge severity-badge ms-2 severity-${v}`; }
+}
+
+function updateStressBadge(v) {
+  const b = document.getElementById("stressBadge");
+  if (!b) return;
+  b.textContent = v;
+  const sev = v <= 3 ? 2 : v <= 6 ? 5 : v <= 8 ? 7 : 10;
+  b.className = `badge severity-badge ms-2 severity-${sev}`;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   LOG HEALTH
+══════════════════════════════════════════════════════════════════ */
+function switchHealthTab(tab, el) {
+  document.querySelectorAll(".health-tab").forEach(t => t.style.display = "none");
+  document.querySelectorAll("#healthTabs .nav-link").forEach(l => l.classList.remove("active"));
+  document.getElementById("htab-" + tab).style.display = "";
+  el.classList.add("active");
+  return false;
+}
+
+function saveSleep() {
+  const date = document.getElementById("sleepDate").value || today();
+  const hours = parseFloat(document.getElementById("sleepHours").value);
+  if (!hours || hours <= 0) { showToast("Enter valid hours slept", "warning"); return; }
+  const quality = document.getElementById("sleepQuality").value;
+  const wake = document.getElementById("sleepWake").value;
+  const notes = document.getElementById("sleepNotes").value;
+  addEntry("sleep", { date, hours, quality: quality ? parseInt(quality) : null, wake_time: wake || null, notes: notes || null });
+  showToast("Sleep entry saved!", "success");
+  document.getElementById("sleepHours").value = "";
+  document.getElementById("sleepQuality").value = "";
+  document.getElementById("sleepWake").value = "";
+  document.getElementById("sleepNotes").value = "";
+}
+
+function saveFood() {
+  const date = document.getElementById("foodDate").value || today();
+  const meal = document.getElementById("foodMeal").value;
+  const items = document.getElementById("foodItems").value;
+  const ingredients = document.getElementById("foodIngredients").value;
+  const notes = document.getElementById("foodNotes").value;
+  addEntry("food", { date, meal_type: meal, items: items || null, ingredients: ingredients || null, notes: notes || null });
+  showToast("Food entry saved!", "success");
+  document.getElementById("foodItems").value = "";
+  document.getElementById("foodIngredients").value = "";
+  document.getElementById("foodNotes").value = "";
+}
+
+function saveWater() {
+  const date = document.getElementById("waterDate").value || today();
+  const cups = parseFloat(document.getElementById("waterCups").value);
+  if (!cups || cups <= 0) { showToast("Enter a valid number of cups", "warning"); return; }
+  addEntry("water", { date, cups });
+  showToast("Water intake saved!", "success");
+  document.getElementById("waterCups").value = "";
+}
+
+function saveCaffeine() {
+  const date = document.getElementById("cafDate").value || today();
+  const cups = parseFloat(document.getElementById("cafCups").value);
+  if (!cups || cups <= 0) { showToast("Enter a valid number of cups", "warning"); return; }
+  const type = document.getElementById("cafType").value;
+  addEntry("caffeine", { date, cups, drink_type: type || null });
+  showToast("Caffeine entry saved!", "success");
+  document.getElementById("cafCups").value = "";
+  document.getElementById("cafType").value = "";
+}
+
+function saveStress() {
+  const date = document.getElementById("stressDate").value || today();
+  const level = parseInt(document.getElementById("stressLevel").value);
+  const notes = document.getElementById("stressNotes").value;
+  addEntry("stress", { date, level, notes: notes || null });
+  showToast("Stress entry saved!", "success");
+  document.getElementById("stressNotes").value = "";
+  document.getElementById("stressLevel").value = 5;
+  updateStressBadge(5);
+}
+
+function saveMenstrual() {
+  const date = document.getElementById("menstrualDate").value || today();
+  const flow = document.getElementById("menstrualFlow").value;
+  const notes = document.getElementById("menstrualNotes").value;
+  addEntry("menstrual", { date, flow_level: flow || null, notes: notes || null });
+  showToast("Cycle entry saved!", "success");
+  document.getElementById("menstrualFlow").value = "";
+  document.getElementById("menstrualNotes").value = "";
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   STATISTICS
+══════════════════════════════════════════════════════════════════ */
+function initStatistics() {
+  buildStatisticsCharts();
+}
+
+function buildStatisticsCharts() {
+  const migraines = load("migraines");
+  const sleepLogs = load("sleep");
+  const waterLogs = load("water");
+  const stressLogs = load("stress");
+  const cutoff30 = daysAgoISO(30);
+  const cutoff12w = daysAgoISO(84);
+  const c = chartColors();
+
+  // Summary cards
+  document.getElementById("sTotalMigraines").textContent = migraines.length || 0;
+
+  const durations = migraines.filter(m => m.duration_hours).map(m => m.duration_hours);
+  document.getElementById("sAvgDuration").textContent =
+    durations.length ? (durations.reduce((s, v) => s + v, 0) / durations.length).toFixed(1) : "–";
+
+  const locCounts = {};
+  migraines.forEach(m => { if (m.location) locCounts[m.location] = (locCounts[m.location] || 0) + 1; });
+  const topLoc = Object.entries(locCounts).sort((a, b) => b[1] - a[1])[0];
+  document.getElementById("sTopLocation").textContent = topLoc ? topLoc[0] : "–";
+
+  const trigAll = [];
+  migraines.forEach(m => { if (m.triggers) m.triggers.split(",").filter(Boolean).forEach(t => trigAll.push(t.trim())); });
+  const trigCounts = {};
+  trigAll.forEach(t => { trigCounts[t] = (trigCounts[t] || 0) + 1; });
+  const topTrig = Object.entries(trigCounts).sort((a, b) => b[1] - a[1])[0];
+  document.getElementById("sTopTrigger").textContent = topTrig ? topTrig[0] : "–";
+
+  // 1. Weekly frequency
+  const migs12w = migraines.filter(m => m.date >= cutoff12w);
+  const weekCounts = {};
+  migs12w.forEach(m => { const k = isoWeekKey(m.date); weekCounts[k] = (weekCounts[k] || 0) + 1; });
+  const wfLabels = Object.keys(weekCounts).sort();
+  buildOrUpdateChart("weeklyFreqChart", {
+    type: "bar",
+    data: {
+      labels: wfLabels,
+      datasets: [{ label:"Migraines", data: wfLabels.map(k => weekCounts[k]),
+        backgroundColor:"rgba(79,70,229,0.7)", borderColor: c.primary, borderWidth:1.5, borderRadius:6 }],
+    },
+    options: { ...baseOptions("Count","Week"),
+      scales: { ...baseOptions().scales, y: { ticks: { stepSize:1, color:c.text }, grid:{color:c.grid}, min:0 } } },
+  });
+
+  // 2. Severity trend
+  const migs30 = migraines.filter(m => m.date >= cutoff30).sort((a,b) => a.date.localeCompare(b.date));
+  buildOrUpdateChart("severityTrendChart", {
+    type:"line",
+    data: {
+      labels: migs30.map(m => m.date.slice(5)),
+      datasets: [{ label:"Severity", data: migs30.map(m => m.severity),
+        borderColor:c.danger, backgroundColor:"rgba(239,68,68,0.1)",
+        borderWidth:2.5, pointRadius:4, tension:0.35, fill:true }],
+    },
+    options: { ...baseOptions("Severity (1–10)","Date"),
+      scales: { ...baseOptions().scales, y: { min:0, max:10, ticks:{color:c.text}, grid:{color:c.grid} } } },
+  });
+
+  // 3. Sleep vs migraine
+  const sleep30 = sleepLogs.filter(s => s.date >= cutoff30).sort((a,b) => a.date.localeCompare(b.date));
+  const migDates30 = new Set(migs30.map(m => m.date));
+  buildOrUpdateChart("sleepMigraineChart", {
+    type:"bar",
+    data: {
+      labels: sleep30.map(s => s.date.slice(5)),
+      datasets: [{ label:"Hours Slept", data: sleep30.map(s => s.hours),
+        backgroundColor: sleep30.map(s => migDates30.has(s.date) ? "rgba(239,68,68,0.65)" : "rgba(8,145,178,0.65)"),
+        borderColor: sleep30.map(s => migDates30.has(s.date) ? c.danger : c.info),
+        borderWidth:1.5, borderRadius:4 }],
+    },
+    options: { ...baseOptions("Hours","Date"),
+      plugins: { ...baseOptions().plugins, legend:{display:false},
+        tooltip: { callbacks: { afterLabel: ctx => sleep30[ctx.dataIndex]?.had_migraine ? "⚠ Migraine day" : "" } } } },
+  });
+
+  // 4. Triggers
+  const sortedTrigs = Object.entries(trigCounts).sort((a,b) => b[1]-a[1]).slice(0, 8);
+  buildOrUpdateChart("triggersChart", {
+    type:"bar",
+    data: {
+      labels: sortedTrigs.map(e => e[0]),
+      datasets: [{ label:"Occurrences", data: sortedTrigs.map(e => e[1]),
+        backgroundColor:["rgba(239,68,68,0.7)","rgba(249,115,22,0.7)","rgba(245,158,11,0.7)",
+          "rgba(16,185,129,0.7)","rgba(8,145,178,0.7)","rgba(79,70,229,0.7)",
+          "rgba(124,58,237,0.7)","rgba(219,39,119,0.7)"], borderRadius:6 }],
+    },
+    options: { indexAxis:"y", ...baseOptions("","Occurrences"),
+      scales: { x: { ticks:{stepSize:1,color:c.text}, grid:{color:c.grid}, min:0 },
+                y: { ticks:{color:c.text}, grid:{display:false} } } },
+  });
+
+  // 5. Stress trend
+  const stress30 = stressLogs.filter(s => s.date >= cutoff30).sort((a,b) => a.date.localeCompare(b.date));
+  buildOrUpdateChart("stressChart", {
+    type:"line",
+    data: {
+      labels: stress30.map(s => s.date.slice(5)),
+      datasets: [{ label:"Stress Level", data: stress30.map(s => s.level),
+        borderColor:c.warning, backgroundColor:"rgba(245,158,11,0.12)",
+        borderWidth:2.5, pointRadius:4, tension:0.35, fill:true }],
+    },
+    options: { ...baseOptions("Stress Level (1–10)","Date"),
+      scales: { ...baseOptions().scales, y: { min:0, max:10, ticks:{color:c.text}, grid:{color:c.grid} } } },
+  });
+
+  // 6. Water trend
+  const water30 = waterLogs.filter(w => w.date >= cutoff30).sort((a,b) => a.date.localeCompare(b.date));
+  buildOrUpdateChart("waterChart", {
+    type:"line",
+    data: {
+      labels: water30.map(w => w.date.slice(5)),
+      datasets: [{ label:"Cups", data: water30.map(w => w.cups),
+        borderColor:c.info, backgroundColor:"rgba(8,145,178,0.15)",
+        borderWidth:2.5, pointRadius:4, tension:0.35, fill:true }],
+    },
+    options: { ...baseOptions("Cups","Date") },
+  });
+
+  // Location table
+  const tbody = document.getElementById("locationTableBody");
+  const total = Object.values(locCounts).reduce((s,v) => s+v, 0);
+  if (!total) {
+    tbody.innerHTML = '<tr><td colspan="3" class="text-muted text-center">No data</td></tr>';
+  } else {
+    const sorted = Object.entries(locCounts).sort((a,b) => b[1]-a[1]);
+    tbody.innerHTML = sorted.map(([loc, cnt]) =>
+      `<tr><td class="text-capitalize">${loc}</td><td>${cnt}</td><td>${Math.round(cnt/total*100)}%</td></tr>`
+    ).join("");
+  }
+}
+
+function buildOrUpdateChart(id, config) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  if (chartInstances[id]) { chartInstances[id].destroy(); }
+  chartInstances[id] = new Chart(canvas, config);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   REPORTS
+══════════════════════════════════════════════════════════════════ */
+function initReports() {
+  const now = new Date();
+  document.getElementById("reportMonth").value = now.getMonth() + 1;
+  document.getElementById("reportYear").value = now.getFullYear();
+  // Set week start to nearest Monday
+  const d = new Date();
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  document.getElementById("weekStart").value = d.toISOString().slice(0, 10);
+}
+
+function buildCSV(rows) {
+  return rows.map(r => r.map(cell => {
+    const s = String(cell ?? "");
+    return s.includes(",") || s.includes('"') || s.includes("\n")
+      ? `"${s.replace(/"/g, '""')}"` : s;
+  }).join(",")).join("\n");
+}
+
+function downloadCSV(filename, content) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadWeeklyCSV() {
+  const start = document.getElementById("weekStart").value;
+  if (!start) { showToast("Select a week start date", "warning"); return; }
+  const end = new Date(start + "T00:00:00");
+  end.setDate(end.getDate() + 6);
+  const endISO = end.toISOString().slice(0, 10);
+
+  const migraines = load("migraines").filter(m => m.date >= start && m.date <= endISO);
+  const sleep = load("sleep").filter(s => s.date >= start && s.date <= endISO);
+  const water = load("water").filter(w => w.date >= start && w.date <= endISO);
+  const stress = load("stress").filter(s => s.date >= start && s.date <= endISO);
+
+  const rows = [
+    ["=== WEEKLY MIGRAINE REPORT ==="],
+    [`Week: ${start} to ${endISO}`],
+    [],
+    ["-- MIGRAINES --"],
+    ["Date","Severity","Location","Duration (hrs)","Triggers","Symptoms","Medication","Notes"],
+    ...migraines.map(m => [m.date, m.severity, m.location||"", m.duration_hours||"", m.triggers||"", m.symptoms||"", m.medication||"", m.notes||""]),
+    [],
+    ["-- SLEEP --"],
+    ["Date","Hours Slept","Quality","Wake Time","Notes"],
+    ...sleep.map(s => [s.date, s.hours, s.quality||"", s.wake_time||"", s.notes||""]),
+    [],
+    ["-- WATER --"],
+    ["Date","Cups"],
+    ...water.map(w => [w.date, w.cups]),
+    [],
+    ["-- STRESS --"],
+    ["Date","Level","Notes"],
+    ...stress.map(s => [s.date, s.level, s.notes||""]),
+  ];
+
+  downloadCSV(`migraine-weekly-${start}.csv`, buildCSV(rows));
+}
+
+function downloadMonthlyCSV() {
+  const month = parseInt(document.getElementById("reportMonth").value);
+  const year = parseInt(document.getElementById("reportYear").value);
+  const startISO = `${year}-${String(month).padStart(2,"0")}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endISO = `${year}-${String(month).padStart(2,"0")}-${String(lastDay).padStart(2,"0")}`;
+
+  const migraines = load("migraines").filter(m => m.date >= startISO && m.date <= endISO);
+  const sleep = load("sleep").filter(s => s.date >= startISO && s.date <= endISO);
+  const water = load("water").filter(w => w.date >= startISO && w.date <= endISO);
+  const stress = load("stress").filter(s => s.date >= startISO && s.date <= endISO);
+
+  const monthNames = ["","January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  const rows = [
+    ["=== MONTHLY MIGRAINE REPORT ==="],
+    [`Month: ${monthNames[month]} ${year}`],
+    [],
+    ["-- MIGRAINES --"],
+    ["Date","Severity","Location","Duration (hrs)","Triggers","Symptoms","Medication","Notes"],
+    ...migraines.map(m => [m.date, m.severity, m.location||"", m.duration_hours||"", m.triggers||"", m.symptoms||"", m.medication||"", m.notes||""]),
+    [],
+    ["-- SLEEP --"],
+    ["Date","Hours Slept","Quality","Wake Time","Notes"],
+    ...sleep.map(s => [s.date, s.hours, s.quality||"", s.wake_time||"", s.notes||""]),
+    [],
+    ["-- WATER --"],
+    ["Date","Cups"],
+    ...water.map(w => [w.date, w.cups]),
+    [],
+    ["-- STRESS --"],
+    ["Date","Level","Notes"],
+    ...stress.map(s => [s.date, s.level, s.notes||""]),
+  ];
+
+  downloadCSV(`migraine-${year}-${String(month).padStart(2,"0")}.csv`, buildCSV(rows));
+}
+
+function clearAllData() {
+  if (!confirm("This will permanently delete ALL your tracked data. Are you sure?")) return;
+  Object.values(KEYS).forEach(k => localStorage.removeItem(k));
+  showToast("All data cleared", "info");
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════════════ */
+document.addEventListener("DOMContentLoaded", () => {
+  // Set default dates for health forms
+  const t = today();
+  ["sleepDate","foodDate","waterDate","cafDate","stressDate","menstrualDate"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = t;
+  });
+
+  initDashboard();
+  initLogMigraine();
+});
+</script>
+</body>
+</html>
