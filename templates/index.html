@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – Migraine Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+  <h1 class="page-title"><i class="bi bi-house me-2"></i>Dashboard</h1>
+  <p class="text-muted mb-0">{{ today.strftime('%A, %B %d, %Y') }}</p>
+</div>
+
+<!-- Stats Overview Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-card-primary">
+      <div class="stat-icon"><i class="bi bi-activity"></i></div>
+      <div class="stat-value">{{ total_this_month }}</div>
+      <div class="stat-label">Migraines This Month</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-card-warning">
+      <div class="stat-icon"><i class="bi bi-speedometer2"></i></div>
+      <div class="stat-value">{{ avg_severity if avg_severity else '–' }}</div>
+      <div class="stat-label">Avg Severity</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-card-success">
+      <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+      <div class="stat-value">{{ days_since if days_since is not none else '–' }}</div>
+      <div class="stat-label">Days Since Last Migraine</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-card-info">
+      <div class="stat-icon"><i class="bi bi-moon-stars"></i></div>
+      <div class="stat-value">{{ avg_sleep if avg_sleep else '–' }}</div>
+      <div class="stat-label">Avg Sleep Hours</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <!-- Trend Chart -->
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-graph-up me-2"></i>Migraine Severity Trend (Last 30 Days)</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="dashboardTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mini Calendar -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <i class="bi bi-calendar3 me-2"></i>This Month
+      </div>
+      <div class="card-body p-2">
+        <div id="miniCalendar" class="mini-calendar"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Recent Activity -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-clock-history me-2"></i>Recent Activity
+      </div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush" id="recentActivity">
+          <li class="list-group-item text-muted text-center py-4">
+            <div class="spinner-border spinner-border-sm me-2"></div>Loading...
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Water Log -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-droplet me-2"></i>Quick Water Log
+      </div>
+      <div class="card-body">
+        <p class="text-muted small">Log today's water intake instantly.</p>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Date</label>
+          <input type="date" class="form-control" id="quickWaterDate" value="{{ today.isoformat() }}" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Cups of Water</label>
+          <input type="number" class="form-control" id="quickWaterCups" min="0" max="30" step="0.5" placeholder="e.g. 8" />
+        </div>
+        <button class="btn btn-primary w-100" onclick="quickLogWater()">
+          <i class="bi bi-droplet-fill me-1"></i>Log Water
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="card mt-3">
+      <div class="card-header"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</div>
+      <div class="card-body d-grid gap-2">
+        <a href="/log-migraine" class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-plus-circle me-1"></i>Log a Migraine
+        </a>
+        <a href="/log-health" class="btn btn-outline-success btn-sm">
+          <i class="bi bi-heart-pulse me-1"></i>Log Health Data
+        </a>
+        <a href="/statistics" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-bar-chart-line me-1"></i>View Statistics
+        </a>
+        <a href="/reports" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-download me-1"></i>Download Reports
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    loadRecentActivity();
+    renderMiniCalendar();
+    if (typeof initDashboardChart === "function") initDashboardChart();
+  });
+
+  function quickLogWater() {
+    const date = document.getElementById("quickWaterDate").value;
+    const cups = parseFloat(document.getElementById("quickWaterCups").value);
+    if (!cups || cups <= 0) { showToast("Enter a valid number of cups", "warning"); return; }
+    apiPost("/api/water", { date, cups }).then(r => {
+      if (r.success) {
+        showToast("Water intake logged!", "success");
+        document.getElementById("quickWaterCups").value = "";
+        loadRecentActivity();
+      } else {
+        showToast(r.error || "Failed to log water", "danger");
+      }
+    });
+  }
+</script>
+{% endblock %}

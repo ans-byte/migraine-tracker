@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Reports – Migraine Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+  <h1 class="page-title"><i class="bi bi-file-earmark-text me-2"></i>Reports</h1>
+  <p class="text-muted mb-0">Download your migraine and health data as CSV or PDF reports.</p>
+</div>
+
+<div class="row g-4">
+  <!-- Weekly Reports -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <i class="bi bi-calendar-week me-2"></i>Weekly Report
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Generate a report for a specific week. Select the Monday of the week you want.</p>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Week Starting (Monday)</label>
+          <input type="date" class="form-control" id="weekStart" value="{{ today.isoformat() }}" />
+        </div>
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-primary" onclick="downloadWeeklyCSV()">
+            <i class="bi bi-filetype-csv me-2"></i>Download Weekly CSV
+          </button>
+          <button class="btn btn-primary" onclick="downloadWeeklyPDF()">
+            <i class="bi bi-file-earmark-pdf me-2"></i>Download Weekly PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Reports -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <i class="bi bi-calendar-month me-2"></i>Monthly Report
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Generate a complete report for an entire month.</p>
+        <div class="row g-2 mb-3">
+          <div class="col-7">
+            <label class="form-label fw-semibold">Month</label>
+            <select class="form-select" id="reportMonth">
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </div>
+          <div class="col-5">
+            <label class="form-label fw-semibold">Year</label>
+            <input type="number" class="form-control" id="reportYear" value="{{ today.year }}" min="2020" max="2030" />
+          </div>
+        </div>
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-primary" onclick="downloadMonthlyCSV()">
+            <i class="bi bi-filetype-csv me-2"></i>Download Monthly CSV
+          </button>
+          <button class="btn btn-primary" onclick="downloadMonthlyPDF()">
+            <i class="bi bi-file-earmark-pdf me-2"></i>Download Monthly PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What's Included -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-info-circle me-2"></i>What's Included in Reports</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-activity text-danger fs-5 mt-1"></i>
+              <div>
+                <div class="fw-semibold">Migraine Summary</div>
+                <div class="text-muted small">Total count, average severity, average duration, and detailed log of each migraine episode.</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-moon-stars text-primary fs-5 mt-1"></i>
+              <div>
+                <div class="fw-semibold">Sleep Statistics</div>
+                <div class="text-muted small">Average hours slept, sleep quality score, and nightly sleep log entries.</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-droplet text-info fs-5 mt-1"></i>
+              <div>
+                <div class="fw-semibold">Water Intake</div>
+                <div class="text-muted small">Total cups consumed, average daily intake, and daily breakdown.</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-lightning text-warning fs-5 mt-1"></i>
+              <div>
+                <div class="fw-semibold">Stress Levels</div>
+                <div class="text-muted small">Average stress level, high/low points, and daily stress log entries.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instructions -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-question-circle me-2"></i>How to Use Reports</div>
+      <div class="card-body">
+        <ol class="mb-0">
+          <li class="mb-2"><strong>CSV files</strong> can be opened in Excel, Google Sheets, or any spreadsheet application for further analysis.</li>
+          <li class="mb-2"><strong>PDF files</strong> are formatted for printing or sharing with your healthcare provider.</li>
+          <li class="mb-2">For weekly reports, select the <strong>Monday</strong> of the week you want to report on.</li>
+          <li class="mb-2">For monthly reports, select the <strong>month and year</strong> from the dropdowns.</li>
+          <li>Reports include only data you have logged in the tracker — log consistently for the most useful reports.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Set default month to current month
+  document.getElementById("reportMonth").value = new Date().getMonth() + 1;
+
+  function downloadWeeklyCSV() {
+    const start = document.getElementById("weekStart").value;
+    window.location.href = `/download/weekly-csv?start=${start}`;
+  }
+  function downloadWeeklyPDF() {
+    const start = document.getElementById("weekStart").value;
+    window.location.href = `/download/weekly-pdf?start=${start}`;
+  }
+  function downloadMonthlyCSV() {
+    const month = document.getElementById("reportMonth").value;
+    const year = document.getElementById("reportYear").value;
+    window.location.href = `/download/monthly-csv?year=${year}&month=${month}`;
+  }
+  function downloadMonthlyPDF() {
+    const month = document.getElementById("reportMonth").value;
+    const year = document.getElementById("reportYear").value;
+    window.location.href = `/download/monthly-pdf?year=${year}&month=${month}`;
+  }
+</script>
+{% endblock %}
