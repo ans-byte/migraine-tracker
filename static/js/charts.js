@@ -51,7 +51,8 @@ async function initDashboardChart() {
 
   const trend = data.severity_trend || [];
   const labels = trend.map(d => {
-    const dt = new Date(d.date + "T00:00:00");
+    const [y, mo, dy] = d.date.split("-").map(Number);
+    const dt = new Date(y, mo - 1, dy);
     return dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   });
   const severities = trend.map(d => d.severity);

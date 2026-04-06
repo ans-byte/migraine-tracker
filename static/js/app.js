@@ -134,7 +134,8 @@ async function loadRecentActivity() {
 
   container.innerHTML = items.slice(0, 10).map(item => {
     const cfg = iconMap[item.type] || { icon: "bi-circle", cls: "" };
-    const d = new Date(item.date + "T00:00:00");
+    const [y, mo, dy] = item.date.split("-").map(Number);
+    const d = new Date(y, mo - 1, dy);
     const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     return `
       <li class="list-group-item d-flex align-items-center gap-3 py-2">
