@@ -3,9 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import date, datetime, timedelta
 from collections import Counter
 import io
+import logging
 import os
 
 from models import db, Migraine, FoodLog, SleepLog, WaterIntake, CaffeineLog, StressLog, MenstrualLog
+
+logger = logging.getLogger(__name__)
 import reports as report_gen
 
 app = Flask(__name__)
@@ -106,7 +109,8 @@ def api_save_migraine():
         return jsonify({"success": True, "id": entry.id, "message": "Migraine entry saved"}), 201
     except Exception as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        logger.error("DB error: %s", exc)
+        return jsonify({"error": "Invalid data or server error. Please check your input."}), 400
 
 
 @app.route("/api/food", methods=["POST"])
@@ -125,7 +129,8 @@ def api_save_food():
         return jsonify({"success": True, "id": entry.id, "message": "Food entry saved"}), 201
     except Exception as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        logger.error("DB error: %s", exc)
+        return jsonify({"error": "Invalid data or server error. Please check your input."}), 400
 
 
 @app.route("/api/sleep", methods=["POST"])
@@ -145,7 +150,8 @@ def api_save_sleep():
         return jsonify({"success": True, "id": entry.id, "message": "Sleep entry saved"}), 201
     except Exception as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        logger.error("DB error: %s", exc)
+        return jsonify({"error": "Invalid data or server error. Please check your input."}), 400
 
 
 @app.route("/api/water", methods=["POST"])
@@ -161,7 +167,8 @@ def api_save_water():
         return jsonify({"success": True, "id": entry.id, "message": "Water intake saved"}), 201
     except Exception as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        logger.error("DB error: %s", exc)
+        return jsonify({"error": "Invalid data or server error. Please check your input."}), 400
 
 
 @app.route("/api/caffeine", methods=["POST"])
@@ -178,7 +185,8 @@ def api_save_caffeine():
         return jsonify({"success": True, "id": entry.id, "message": "Caffeine entry saved"}), 201
     except Exception as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        logger.error("DB error: %s", exc)
+        return jsonify({"error": "Invalid data or server error. Please check your input."}), 400
 
 
 @app.route("/api/stress", methods=["POST"])
@@ -198,7 +206,8 @@ def api_save_stress():
         return jsonify({"success": True, "id": entry.id, "message": "Stress entry saved"}), 201
     except Exception as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        logger.error("DB error: %s", exc)
+        return jsonify({"error": "Invalid data or server error. Please check your input."}), 400
 
 
 @app.route("/api/menstrual", methods=["POST"])
@@ -215,7 +224,8 @@ def api_save_menstrual():
         return jsonify({"success": True, "id": entry.id, "message": "Menstrual entry saved"}), 201
     except Exception as exc:
         db.session.rollback()
-        return jsonify({"error": str(exc)}), 400
+        logger.error("DB error: %s", exc)
+        return jsonify({"error": "Invalid data or server error. Please check your input."}), 400
 
 
 # ── API: read/delete ──────────────────────────────────────────────────────────

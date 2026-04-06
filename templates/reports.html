@@ -146,22 +146,22 @@
   document.getElementById("reportMonth").value = new Date().getMonth() + 1;
 
   function downloadWeeklyCSV() {
-    const start = document.getElementById("weekStart").value;
-    window.location.href = `/download/weekly-csv?start=${start}`;
+    const start = encodeURIComponent(document.getElementById("weekStart").value);
+    window.location.href = "/download/weekly-csv?start=" + start;
   }
   function downloadWeeklyPDF() {
-    const start = document.getElementById("weekStart").value;
-    window.location.href = `/download/weekly-pdf?start=${start}`;
+    const start = encodeURIComponent(document.getElementById("weekStart").value);
+    window.location.href = "/download/weekly-pdf?start=" + start;
   }
   function downloadMonthlyCSV() {
-    const month = document.getElementById("reportMonth").value;
-    const year = document.getElementById("reportYear").value;
-    window.location.href = `/download/monthly-csv?year=${year}&month=${month}`;
+    const month = encodeURIComponent(document.getElementById("reportMonth").value);
+    const year = encodeURIComponent(document.getElementById("reportYear").value);
+    window.location.href = "/download/monthly-csv?year=" + year + "&month=" + month;
   }
   function downloadMonthlyPDF() {
-    const month = document.getElementById("reportMonth").value;
-    const year = document.getElementById("reportYear").value;
-    window.location.href = `/download/monthly-pdf?year=${year}&month=${month}`;
+    const month = encodeURIComponent(document.getElementById("reportMonth").value);
+    const year = encodeURIComponent(document.getElementById("reportYear").value);
+    window.location.href = "/download/monthly-pdf?year=" + year + "&month=" + month;
   }
 </script>
 {% endblock %}
