@@ -1,4 +1,5 @@
 Flask
-SQLAlchemy
-# Add any other necessary dependencies below
+Flask-SQLAlchemy
+reportlab
+python-dateutil
 

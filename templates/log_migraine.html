@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Log Migraine – Migraine Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+  <h1 class="page-title"><i class="bi bi-plus-circle me-2"></i>Log a Migraine</h1>
+  <p class="text-muted mb-0">Record your migraine details for tracking and analysis.</p>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-pencil-square me-2"></i>Migraine Details</div>
+      <div class="card-body">
+        <form id="migraineForm" novalidate>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="mDate" name="date" value="{{ today.isoformat() }}" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Location</label>
+              <select class="form-select" id="mLocation" name="location">
+                <option value="">Select location…</option>
+                <option value="frontal">Frontal (forehead)</option>
+                <option value="temporal">Temporal (sides)</option>
+                <option value="occipital">Occipital (back)</option>
+                <option value="parietal">Parietal (top)</option>
+                <option value="full head">Full Head</option>
+                <option value="behind eyes">Behind Eyes</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              Severity <span class="text-danger">*</span>
+              <span class="badge severity-badge ms-2" id="severityBadge">5</span>
+            </label>
+            <input type="range" class="form-range severity-slider" id="mSeverity" name="severity"
+                   min="1" max="10" value="5" oninput="updateSeverityBadge(this.value)" />
+            <div class="d-flex justify-content-between text-muted small">
+              <span>1 – Mild</span><span>5 – Moderate</span><span>10 – Severe</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Duration (hours)</label>
+            <input type="number" class="form-control" id="mDuration" name="duration_hours"
+                   min="0" max="72" step="0.5" placeholder="e.g. 4.5" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Triggers</label>
+            <div class="row row-cols-2 row-cols-md-3 g-2">
+              {% for trigger in ['stress','sleep','food','caffeine','weather','hormonal','exercise','dehydration','other'] %}
+              <div class="col">
+                <div class="form-check trigger-check">
+                  <input class="form-check-input" type="checkbox" name="triggers" value="{{ trigger }}" id="t_{{ trigger }}">
+                  <label class="form-check-label" for="t_{{ trigger }}">{{ trigger|title }}</label>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Symptoms</label>
+            <div class="row row-cols-2 row-cols-md-3 g-2">
+              {% for symptom in ['nausea','vomiting','light sensitivity','sound sensitivity','visual aura','neck stiffness','dizziness','other'] %}
+              <div class="col">
+                <div class="form-check trigger-check">
+                  <input class="form-check-input" type="checkbox" name="symptoms" value="{{ symptom }}" id="s_{{ loop.index }}">
+                  <label class="form-check-label" for="s_{{ loop.index }}">{{ symptom|title }}</label>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Medication Taken</label>
+            <input type="text" class="form-control" id="mMedication" name="medication"
+                   placeholder="e.g. Ibuprofen 400mg, Sumatriptan" />
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Notes</label>
+            <textarea class="form-control" id="mNotes" name="notes" rows="3"
+                      placeholder="Any additional details about this migraine…"></textarea>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle me-1"></i>Save Migraine Entry
+            </button>
+            <button type="reset" class="btn btn-outline-secondary">
+              <i class="bi bi-x-circle me-1"></i>Reset
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-lightbulb me-2"></i>Tips</div>
+      <div class="card-body small">
+        <ul class="mb-0 ps-3">
+          <li class="mb-1">Log as soon as possible after the migraine starts.</li>
+          <li class="mb-1">Select all applicable triggers and symptoms.</li>
+          <li class="mb-1">Note any medications taken and their timing.</li>
+          <li>Consistent logging helps identify your personal patterns.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><i class="bi bi-clock-history me-2"></i>Recent Migraines</div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush" id="recentMigraines">
+          {% if recent_migraines %}
+            {% for m in recent_migraines %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-semibold">{{ m.date.strftime('%b %d') }}</div>
+                <div class="text-muted small">{{ m.location|title if m.location else 'Unknown location' }}</div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge severity-{{ m.severity }}">{{ m.severity }}</span>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteMigraine({{ m.id }})">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </li>
+            {% endfor %}
+          {% else %}
+            <li class="list-group-item text-muted text-center py-3">No recent migraines</li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  updateSeverityBadge(5);
+
+  document.getElementById("migraineForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const triggers = [...document.querySelectorAll('input[name="triggers"]:checked')].map(c => c.value);
+    const symptoms = [...document.querySelectorAll('input[name="symptoms"]:checked')].map(c => c.value);
+    const payload = {
+      date: document.getElementById("mDate").value,
+      severity: parseInt(document.getElementById("mSeverity").value),
+      location: document.getElementById("mLocation").value,
+      duration_hours: document.getElementById("mDuration").value || null,
+      triggers,
+      symptoms,
+      medication: document.getElementById("mMedication").value,
+      notes: document.getElementById("mNotes").value,
+    };
+    apiPost("/api/migraine", payload).then(r => {
+      if (r.success) {
+        showToast("Migraine entry saved successfully!", "success");
+        document.getElementById("migraineForm").reset();
+        updateSeverityBadge(5);
+        setTimeout(() => location.reload(), 1200);
+      } else {
+        showToast(r.error || "Failed to save migraine entry", "danger");
+      }
+    });
+  });
+</script>
+{% endblock %}

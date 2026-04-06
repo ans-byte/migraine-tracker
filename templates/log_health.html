@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block title %}Health Log – Migraine Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+  <h1 class="page-title"><i class="bi bi-heart-pulse me-2"></i>Health Log</h1>
+  <p class="text-muted mb-0">Track your daily health metrics to spot migraine patterns.</p>
+</div>
+
+<ul class="nav nav-tabs mb-3" id="healthTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#foodTab">
+      <i class="bi bi-egg-fried me-1"></i>Food
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#sleepTab">
+      <i class="bi bi-moon-stars me-1"></i>Sleep
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#waterTab">
+      <i class="bi bi-droplet me-1"></i>Water
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#caffeineTab">
+      <i class="bi bi-cup-hot me-1"></i>Caffeine
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#stressTab">
+      <i class="bi bi-lightning me-1"></i>Stress
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#menstrualTab">
+      <i class="bi bi-calendar2-heart me-1"></i>Menstrual
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content" id="healthTabContent">
+
+  <!-- Food Tab -->
+  <div class="tab-pane fade show active" id="foodTab" role="tabpanel">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-egg-fried me-2"></i>Food Log</div>
+      <div class="card-body">
+        <form id="foodForm">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date</label>
+              <input type="date" class="form-control" id="fDate" value="{{ today.isoformat() }}" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Meal Type</label>
+              <select class="form-select" id="fMealType">
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch">Lunch</option>
+                <option value="dinner">Dinner</option>
+                <option value="snack">Snack</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Food Items</label>
+            <input type="text" class="form-control" id="fItems" placeholder="e.g. Oatmeal, banana, coffee" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Key Ingredients</label>
+            <input type="text" class="form-control" id="fIngredients" placeholder="e.g. oats, milk, honey" />
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Notes</label>
+            <textarea class="form-control" id="fNotes" rows="2" placeholder="Any notes about this meal…"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle me-1"></i>Save Food Log</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sleep Tab -->
+  <div class="tab-pane fade" id="sleepTab" role="tabpanel">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-moon-stars me-2"></i>Sleep Log</div>
+      <div class="card-body">
+        <form id="sleepForm">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date</label>
+              <input type="date" class="form-control" id="slDate" value="{{ today.isoformat() }}" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Wake Time</label>
+              <input type="time" class="form-control" id="slWakeTime" />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Hours Slept</label>
+            <input type="number" class="form-control" id="slHours" min="0" max="24" step="0.5" placeholder="e.g. 7.5" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              Sleep Quality
+              <span class="badge severity-badge ms-2" id="sleepQualityBadge">5</span>
+            </label>
+            <input type="range" class="form-range" id="slQuality" min="1" max="10" value="5"
+                   oninput="document.getElementById('sleepQualityBadge').textContent = this.value" />
+            <div class="d-flex justify-content-between text-muted small">
+              <span>1 – Poor</span><span>5 – Fair</span><span>10 – Excellent</span>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Notes</label>
+            <textarea class="form-control" id="slNotes" rows="2" placeholder="Nightmares, restless, etc."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle me-1"></i>Save Sleep Log</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Water Tab -->
+  <div class="tab-pane fade" id="waterTab" role="tabpanel">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-droplet me-2"></i>Water Intake</div>
+      <div class="card-body">
+        <form id="waterForm">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date</label>
+              <input type="date" class="form-control" id="wDate" value="{{ today.isoformat() }}" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Cups of Water</label>
+              <input type="number" class="form-control" id="wCups" min="0" max="30" step="0.5" placeholder="e.g. 8" />
+            </div>
+          </div>
+          <p class="text-muted small">Recommended: 8 cups (64 oz) per day. Dehydration is a common migraine trigger.</p>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle me-1"></i>Save Water Intake</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Caffeine Tab -->
+  <div class="tab-pane fade" id="caffeineTab" role="tabpanel">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-cup-hot me-2"></i>Caffeine Log</div>
+      <div class="card-body">
+        <form id="caffeineForm">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date</label>
+              <input type="date" class="form-control" id="cDate" value="{{ today.isoformat() }}" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Drink Type</label>
+              <select class="form-select" id="cDrinkType">
+                <option value="coffee">Coffee</option>
+                <option value="tea">Tea</option>
+                <option value="energy drink">Energy Drink</option>
+                <option value="soda">Soda</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Number of Cups / Servings</label>
+            <input type="number" class="form-control" id="cCups" min="0" max="20" step="0.5" placeholder="e.g. 2" />
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle me-1"></i>Save Caffeine Log</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stress Tab -->
+  <div class="tab-pane fade" id="stressTab" role="tabpanel">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-lightning me-2"></i>Stress Level</div>
+      <div class="card-body">
+        <form id="stressForm">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Date</label>
+            <input type="date" class="form-control" id="stDate" value="{{ today.isoformat() }}" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              Stress Level
+              <span class="badge severity-badge ms-2" id="stressBadge">5</span>
+            </label>
+            <input type="range" class="form-range stress-slider" id="stLevel" min="1" max="10" value="5"
+                   oninput="updateStressBadge(this.value)" />
+            <div class="d-flex justify-content-between text-muted small">
+              <span>1 – Calm</span><span>5 – Moderate</span><span>10 – Extreme</span>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Notes</label>
+            <textarea class="form-control" id="stNotes" rows="3" placeholder="What caused your stress today?"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle me-1"></i>Save Stress Log</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menstrual Tab -->
+  <div class="tab-pane fade" id="menstrualTab" role="tabpanel">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-calendar2-heart me-2"></i>Menstrual Log</div>
+      <div class="card-body">
+        <form id="menstrualForm">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date</label>
+              <input type="date" class="form-control" id="menDate" value="{{ today.isoformat() }}" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Flow Level</label>
+              <select class="form-select" id="menFlow">
+                <option value="">Select flow level…</option>
+                <option value="spotting">Spotting</option>
+                <option value="light">Light</option>
+                <option value="medium">Medium</option>
+                <option value="heavy">Heavy</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Notes</label>
+            <textarea class="form-control" id="menNotes" rows="3" placeholder="Cramps, mood, other symptoms…"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle me-1"></i>Save Menstrual Log</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  updateStressBadge(5);
+
+  document.getElementById("foodForm").addEventListener("submit", e => {
+    e.preventDefault();
+    apiPost("/api/food", {
+      date: document.getElementById("fDate").value,
+      meal_type: document.getElementById("fMealType").value,
+      items: document.getElementById("fItems").value,
+      ingredients: document.getElementById("fIngredients").value,
+      notes: document.getElementById("fNotes").value,
+    }).then(r => r.success ? showToast("Food log saved!", "success") : showToast(r.error || "Error", "danger"));
+  });
+
+  document.getElementById("sleepForm").addEventListener("submit", e => {
+    e.preventDefault();
+    apiPost("/api/sleep", {
+      date: document.getElementById("slDate").value,
+      hours_slept: parseFloat(document.getElementById("slHours").value),
+      quality: parseInt(document.getElementById("slQuality").value),
+      wake_time: document.getElementById("slWakeTime").value,
+      notes: document.getElementById("slNotes").value,
+    }).then(r => r.success ? showToast("Sleep log saved!", "success") : showToast(r.error || "Error", "danger"));
+  });
+
+  document.getElementById("waterForm").addEventListener("submit", e => {
+    e.preventDefault();
+    apiPost("/api/water", {
+      date: document.getElementById("wDate").value,
+      cups: parseFloat(document.getElementById("wCups").value),
+    }).then(r => r.success ? showToast("Water intake saved!", "success") : showToast(r.error || "Error", "danger"));
+  });
+
+  document.getElementById("caffeineForm").addEventListener("submit", e => {
+    e.preventDefault();
+    apiPost("/api/caffeine", {
+      date: document.getElementById("cDate").value,
+      cups: parseFloat(document.getElementById("cCups").value),
+      drink_type: document.getElementById("cDrinkType").value,
+    }).then(r => r.success ? showToast("Caffeine log saved!", "success") : showToast(r.error || "Error", "danger"));
+  });
+
+  document.getElementById("stressForm").addEventListener("submit", e => {
+    e.preventDefault();
+    apiPost("/api/stress", {
+      date: document.getElementById("stDate").value,
+      level: parseInt(document.getElementById("stLevel").value),
+      notes: document.getElementById("stNotes").value,
+    }).then(r => r.success ? showToast("Stress log saved!", "success") : showToast(r.error || "Error", "danger"));
+  });
+
+  document.getElementById("menstrualForm").addEventListener("submit", e => {
+    e.preventDefault();
+    apiPost("/api/menstrual", {
+      date: document.getElementById("menDate").value,
+      flow_level: document.getElementById("menFlow").value,
+      notes: document.getElementById("menNotes").value,
+    }).then(r => r.success ? showToast("Menstrual log saved!", "success") : showToast(r.error || "Error", "danger"));
+  });
+</script>
+{% endblock %}
